@@ -53,20 +53,30 @@ while IFS= read -r LINE; do
       "$GITLAB_API/projects" > /dev/null
   fi
 
-  # Clone and push
-  git clone --mirror "$URL"
+  # Clone repo (if not already cloned)
+  if [ ! -d "$NAME.git" ]; then
+    echo "  [+] Cloning repo $NAME from GitHub..."
+    git clone --mirror "$URL" "$NAME.git"
+  fi
+
   cd "$NAME.git" || continue
 
-  git remote add gitlab "https://oauth2:$GITLAB_TOKEN@gitlab.com/$GITLAB_NAMESPACE/$NAME.git"
+  # Pull the latest changes from GitHub
+  echo "  [>] Pulling latest changes from GitHub..."
+  git fetch origin
 
-  echo "  [>] Pushing branches..."
-  git push gitlab --all
-
-  echo "  [>] Pushing safe tags..."
-  SAFE_TAGS=$(git tag -l | grep -vE '[:~^ ]')
-  for TAG in $SAFE_TAGS; do
-    git push gitlab "refs/tags/$TAG"
-  done
+  # Check if there are differences
+  if ! git diff --exit-code; then
+    echo "  [>] Pushing changes to GitLab..."
+    git remote add gitlab "https://oauth2:$GITLAB_TOKEN@gitlab.com/$GITLAB_NAMESPACE/$NAME.git"
+    git push gitlab --all
+    SAFE_TAGS=$(git tag -l | grep -vE '[:~^ ]')
+    for TAG in $SAFE_TAGS; do
+      git push gitlab "refs/tags/$TAG"
+    done
+  else
+    echo "  [>] No changes to push for $NAME"
+  fi
 
   cd ..
   rm -rf "$NAME.git"
