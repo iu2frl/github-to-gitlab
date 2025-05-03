@@ -34,6 +34,26 @@ Set these environment variables in `docker-compose.yml`:
 
 ## Usage
 
+### Docker image
+
+```yaml
+version: '3.8'
+
+services:
+  github-gitlab-mirror:
+    build: .
+    container_name: github-gitlab-mirror
+    environment:
+      GITHUB_TOKEN: ghp_xxx         # Sostituisci con il tuo token GitHub
+      GITLAB_TOKEN: glpat_xxx       # Sostituisci con il tuo token GitLab
+      GITLAB_NAMESPACE: tuo_username_o_gruppo
+    volumes:
+      - ./mirror-data:/root         # Salva temporaneamente i repo clonati
+    restart: unless-stopped
+```
+
+### Manual execution
+
 1. Clone this repository:
 
 ```bash
