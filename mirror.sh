@@ -1,15 +1,16 @@
 #!/bin/bash
 
+# Exit on error (but continue on individual repo errors)
 set -e
 
-# Load config from environment
+# Config from environment
 GITHUB_TOKEN=${GITHUB_TOKEN:?Missing GITHUB_TOKEN}
 GITLAB_TOKEN=${GITLAB_TOKEN:?Missing GITLAB_TOKEN}
 GITLAB_NAMESPACE=${GITLAB_NAMESPACE:?Missing GITLAB_NAMESPACE}
 GITLAB_API="https://gitlab.com/api/v4"
 
-# Prepare repo list
-REPOS_TMP=$(mktemp)
+# Fetch GitHub repositories with pagination
+REPOS=""
 PAGE=1
 
 echo "[*] Fetching repositories from GitHub..."
@@ -19,7 +20,8 @@ while : ; do
     "https://api.github.com/user/repos?per_page=100&page=$PAGE")
 
   COUNT=$(echo "$PAGE_DATA" | jq length)
-  echo "$PAGE_DATA" | jq -r '.[] | .name + " " + .clone_url' >> "$REPOS_TMP"
+
+  REPOS+=$(echo "$PAGE_DATA" | jq -r '.[] | .name + " " + .clone_url')$'\n'
 
   [ "$COUNT" -lt 100 ] && break
   PAGE=$((PAGE + 1))
@@ -35,14 +37,11 @@ if [ -z "$NAMESPACE_ID" ]; then
 fi
 
 # Process each repo
-while IFS= read -r LINE; do
-  NAME=$(cut -d' ' -f1 <<< "$LINE")
-  URL=$(cut -d' ' -f2- <<< "$LINE")
+while read -r NAME URL; do
   [ -z "$NAME" ] && continue
-
   echo "[*] Processing $NAME"
 
-  # Check if GitLab project exists
+  # Check if GitLab repo exists
   EXISTS=$(curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
     "$GITLAB_API/projects/$GITLAB_NAMESPACE%2F$NAME" | jq -r '.id // empty')
 
@@ -51,36 +50,22 @@ while IFS= read -r LINE; do
     curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
       --data "name=$NAME&namespace_id=$NAMESPACE_ID" \
       "$GITLAB_API/projects" > /dev/null
-  fi
-
-  # Clone repo (if not already cloned)
-  if [ ! -d "$NAME.git" ]; then
-    echo "  [+] Cloning repo $NAME from GitHub..."
-    git clone --mirror "$URL" "$NAME.git"
-  fi
-
-  cd "$NAME.git" || continue
-
-  # Pull the latest changes from GitHub
-  echo "  [>] Pulling latest changes from GitHub..."
-  git fetch origin
-
-  # Check if there are differences
-  if ! git diff --exit-code; then
-    echo "  [>] Pushing changes to GitLab..."
-    git remote add gitlab "https://oauth2:$GITLAB_TOKEN@gitlab.com/$GITLAB_NAMESPACE/$NAME.git"
-    git push gitlab --all
-    SAFE_TAGS=$(git tag -l | grep -vE '[:~^ ]')
-    for TAG in $SAFE_TAGS; do
-      git push gitlab "refs/tags/$TAG"
-    done
   else
-    echo "  [>] No changes to push for $NAME"
+    echo "  [=] Repo $NAME already exists on GitLab"
   fi
+
+  # Clone and push mirror (continue on failure)
+  echo "  [+] Cloning repo $NAME from GitHub..."
+  git clone --mirror "$URL" || { echo "  [!] Failed to clone $NAME from GitHub"; continue; }
+
+  cd "$NAME.git" || { echo "  [!] Failed to enter $NAME.git directory"; cd ..; continue; }
+
+  git remote add gitlab "https://oauth2:$GITLAB_TOKEN@gitlab.com/$GITLAB_NAMESPACE/$NAME.git"
+  
+  echo "  [+] Pushing mirror to GitLab..."
+  git push --mirror gitlab || { echo "  [!] Failed to push $NAME to GitLab"; cd ..; rm -rf "$NAME.git"; continue; }
 
   cd ..
   rm -rf "$NAME.git"
 
-done < "$REPOS_TMP"
-
-rm -f "$REPOS_TMP"
+done <<< "$REPOS"
