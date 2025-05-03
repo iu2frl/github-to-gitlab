@@ -8,8 +8,8 @@ GITLAB_TOKEN=${GITLAB_TOKEN:?Missing GITLAB_TOKEN}
 GITLAB_NAMESPACE=${GITLAB_NAMESPACE:?Missing GITLAB_NAMESPACE}
 GITLAB_API="https://gitlab.com/api/v4"
 
-# Fetch all GitHub repos (paginated)
-REPOS=""
+# Prepare repo list
+REPOS_TMP=$(mktemp)
 PAGE=1
 
 echo "[*] Fetching repositories from GitHub..."
@@ -19,7 +19,8 @@ while : ; do
     "https://api.github.com/user/repos?per_page=100&page=$PAGE")
 
   COUNT=$(echo "$PAGE_DATA" | jq length)
-  REPOS+=$(echo "$PAGE_DATA" | jq -r '.[] | .name + " " + .clone_url')$'\n'
+  echo "$PAGE_DATA" | jq -r '.[] | .name + " " + .clone_url' >> "$REPOS_TMP"
+
   [ "$COUNT" -lt 100 ] && break
   PAGE=$((PAGE + 1))
 done
@@ -33,9 +34,12 @@ if [ -z "$NAMESPACE_ID" ]; then
   exit 1
 fi
 
-# Mirror each repo
-while read -r NAME URL; do
+# Process each repo
+while IFS= read -r LINE; do
+  NAME=$(cut -d' ' -f1 <<< "$LINE")
+  URL=$(cut -d' ' -f2- <<< "$LINE")
   [ -z "$NAME" ] && continue
+
   echo "[*] Processing $NAME"
 
   # Check if GitLab project exists
@@ -49,7 +53,7 @@ while read -r NAME URL; do
       "$GITLAB_API/projects" > /dev/null
   fi
 
-  # Clone, push branches and safe tags
+  # Clone and push
   git clone --mirror "$URL"
   cd "$NAME.git" || continue
 
@@ -66,4 +70,7 @@ while read -r NAME URL; do
 
   cd ..
   rm -rf "$NAME.git"
-done <<< "$REPOS"
+
+done < "$REPOS_TMP"
+
+rm -f "$REPOS_TMP"
