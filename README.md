@@ -41,7 +41,7 @@ version: '3.8'
 
 services:
   github-gitlab-mirror:
-    build: .
+    image: ghcr.io/iu2frl/github-to-gitlab:latest
     container_name: github-gitlab-mirror
     environment:
       GITHUB_TOKEN: ghp_xxx         # Sostituisci con il tuo token GitHub
