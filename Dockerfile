@@ -1,18 +1,16 @@
-FROM debian:bookworm
+FROM alpine:latest
 
-# Install tools
-RUN apt-get update && \
-    apt-get install -y git curl jq cron && \
-    apt-get clean
+# Install required tools: git, curl, jq, bash, coreutils
+RUN apk add --no-cache git curl jq bash coreutils
 
-# Copy files
-COPY mirror.sh /mirror.sh
-COPY crontab.txt /etc/cron.d/mirror-cron
+# Create app directory
+WORKDIR /app
 
-RUN chmod +x /mirror.sh && chmod 0644 /etc/cron.d/mirror-cron && \
-    crontab /etc/cron.d/mirror-cron
+# Copy script
+COPY mirror.sh .
 
-# Create log file
-RUN touch /var/log/mirror.log
+# Make script executable
+RUN chmod +x mirror.sh
 
-CMD cron -f
+# Default command
+CMD ["./mirror.sh"]
