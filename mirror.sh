@@ -3,6 +3,8 @@
 # Exit on error (but continue on individual repo errors)
 set -e
 
+cd /root/
+
 # Config from environment
 GITHUB_TOKEN=${GITHUB_TOKEN:?Missing GITHUB_TOKEN}
 GITLAB_TOKEN=${GITLAB_TOKEN:?Missing GITLAB_TOKEN}
