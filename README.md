@@ -47,9 +47,13 @@ services:
       GITHUB_TOKEN: ghp_xxx         # Sostituisci con il tuo token GitHub
       GITLAB_TOKEN: glpat_xxx       # Sostituisci con il tuo token GitLab
       GITLAB_NAMESPACE: tuo_username_o_gruppo
+    tmpfs:
+      - /root
     #volumes:
-      #- ./mirror-data:/root         # Salva temporaneamente i repo clonati (opzionale)
+      #- mirror-data:/root         # Salva temporaneamente i repo clonati (opzionale)
     restart: unless-stopped
+volumes:
+  mirror-data:
 ```
 
 ### Manual execution
