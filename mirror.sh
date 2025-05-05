@@ -22,12 +22,16 @@ while : ; do
     "https://api.github.com/user/repos?per_page=100&page=$PAGE")
 
   COUNT=$(echo "$PAGE_DATA" | jq length)
-
-  REPOS+=$(echo "$PAGE_DATA" | jq -r '.[] | .name + " " + .clone_url')$'\n'
+  REPO=$(echo "$PAGE_DATA" | jq -r '.[] | .name + " https://'"$GITHUB_TOKEN"'@github.com/" + (.full_name) + ".git"')$'\n'
+  REPOS+="$REPO"
 
   [ "$COUNT" -lt 100 ] && break
   PAGE=$((PAGE + 1))
 done
+
+# Print all repositories found
+echo "[*] Repositories found:"
+echo "$REPOS"
 
 # Get GitLab namespace ID
 NAMESPACE_ID=$(curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \

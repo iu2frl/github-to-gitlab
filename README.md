@@ -15,7 +15,7 @@ This project periodically mirrors all GitHub repositories you have access to, pu
 ## Requirements
 
 - Docker + Docker Compose
-- GitHub token with access to your repositories (`repo` scope)
+- GitHub token with access to your repositories (`repo` and `read:org` scope)
 - GitLab token with permissions to create and push repositories (`api` scope)
 
 ---

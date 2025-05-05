@@ -1,1 +1,1 @@
-0 */12 * * * chmod +x /mirror.sh && /mirror.sh
+0 */12 * * * chmod +x /mirror.sh && /mirror.sh >> /proc/1/fd/1 2>> /proc/1/fd/2
