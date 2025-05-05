@@ -21,4 +21,5 @@ RUN crontab /etc/cron.d/mirror-cron
 RUN mkdir -p /root/repos
 
 # Set entrypoint
-ENTRYPOINT ["/root/run-cron.sh"]
+ENTRYPOINT ["/bin/bash"]
+CMD ["/root/run-cron.sh"]
