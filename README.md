@@ -52,8 +52,8 @@ services:
     #volumes:
       #- mirror-data:/root         # Salva temporaneamente i repo clonati (opzionale)
     restart: unless-stopped
-volumes:
-  mirror-data:
+#volumes:
+#  mirror-data:
 ```
 
 ### Manual execution
