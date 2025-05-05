@@ -10,7 +10,7 @@ COPY mirror.sh /root/mirror.sh
 COPY run-cron.sh /root/run-cron.sh
 COPY crontab.txt /etc/cron.d/mirror-cron
 
-RUN chmod +x /root/mirror.sh 
+RUN chmod +x /root/mirror.sh
 RUN chmod +x /root/run-cron.sh
 
 # Add crontab file in the cron.d directory
@@ -21,4 +21,4 @@ RUN crontab /etc/cron.d/mirror-cron
 RUN mkdir -p /root/repos
 
 # Set entrypoint
-ENTRYPOINT ["/bin/bash", "/root/mirror.sh"]
+ENTRYPOINT ["/bin/bash", "/root/run-cron.sh"]
