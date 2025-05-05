@@ -3,7 +3,7 @@
 # Exit on error (but continue on individual repo errors)
 set -e
 
-cd /root/
+cd /root/repos
 
 # Config from environment
 GITHUB_TOKEN=${GITHUB_TOKEN:?Missing GITHUB_TOKEN}
