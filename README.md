@@ -29,6 +29,7 @@ Set these environment variables in `docker-compose.yml`:
 | `GITHUB_TOKEN`     | Personal GitHub token                         |
 | `GITLAB_TOKEN`     | Personal GitLab token                         |
 | `GITLAB_NAMESPACE` | GitLab username or group where to mirror repos |
+| `FORCE_SYNC_ON_START` | Set to `true` to run sync immediately on container start (optional) |
 
 ---
 
@@ -47,6 +48,7 @@ services:
       GITHUB_TOKEN: ghp_xxx         # Sostituisci con il tuo token GitHub
       GITLAB_TOKEN: glpat_xxx       # Sostituisci con il tuo token GitLab
       GITLAB_NAMESPACE: tuo_username_o_gruppo
+      FORCE_SYNC_ON_START: "true"   # Esegui subito la sincronizzazione all'avvio
     tmpfs:
       - /root/repos
     #volumes:

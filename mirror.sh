@@ -6,10 +6,18 @@ set -e
 cd /root/repos
 
 # Config from environment
+FORCE_SYNC_ON_START=${FORCE_SYNC_ON_START:-false}
 GITHUB_TOKEN=${GITHUB_TOKEN:?Missing GITHUB_TOKEN}
 GITLAB_TOKEN=${GITLAB_TOKEN:?Missing GITLAB_TOKEN}
 GITLAB_NAMESPACE=${GITLAB_NAMESPACE:?Missing GITLAB_NAMESPACE}
 GITLAB_API="https://gitlab.com/api/v4"
+
+# Configure git to help with large repositories and low memory environments
+git config --global http.postBuffer 524288000
+git config --global pack.windowMemory 256m
+git config --global pack.threads 1
+git config --global core.compression 0
+git config --global gc.auto 0
 
 # Fetch GitHub repositories with pagination
 REPOS=""
@@ -83,7 +91,7 @@ while read -r NAME URL; do
 
       # Detect invalid index-pack output and try alternative fetch
       if [ -d "$NAME.git" ]; then
-        echo "  [*] Clone created $NAME.git directory but failed; attempting fetch fallback"
+        echo "  [*] Clone created $NAME.git directory but failed; cleaning up before retry"
         rm -rf "$NAME.git"
       fi
 
