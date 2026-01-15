@@ -39,8 +39,9 @@ while : ; do
   PAGE_DATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
     "https://api.github.com/user/repos?per_page=100&page=$PAGE")
 
-  COUNT=$(echo "$PAGE_DATA" | jq length)
-  REPO=$(echo "$PAGE_DATA" | jq -r '.[] | .name + " https://'"$GITHUB_TOKEN"'@github.com/" + (.full_name) + ".git"')$'\n'
+  COUNT=$(echo "$PAGE_DATA" | jq length 2>/dev/null || true)
+  COUNT=${COUNT:-0}
+  REPO=$(echo "$PAGE_DATA" | jq -r '.[] | .name + " https://'"$GITHUB_TOKEN"'@github.com/" + (.full_name) + ".git"' 2>/dev/null || true)$'\n'
   REPOS+="$REPO"
 
   [ "$COUNT" -lt 100 ] && break
@@ -53,7 +54,7 @@ echo "$REPOS"
 
 # Get GitLab namespace ID
 NAMESPACE_ID=$(curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-  "$GITLAB_API/namespaces?search=$GITLAB_NAMESPACE" | jq -r '.[0].id')
+  "$GITLAB_API/namespaces?search=$GITLAB_NAMESPACE" | jq -r '.[0].id' 2>/dev/null || true)
 
 if [ -z "$NAMESPACE_ID" ]; then
   echo "[!] GitLab namespace '$GITLAB_NAMESPACE' not found"
@@ -74,14 +75,14 @@ while read -r NAME URL; do
 
   # Check if GitLab repo exists (retrieve project ID)
   PROJECT_ID=$(curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-    "$GITLAB_API/projects/$GITLAB_NAMESPACE%2F$NAME" | jq -r '.id // empty')
+    "$GITLAB_API/projects/$GITLAB_NAMESPACE%2F$NAME" | jq -r '.id // empty' 2>/dev/null || true)
 
   if [ -z "$PROJECT_ID" ]; then
     echo "  [+] Creating $NAME on GitLab..."
     CREATE_RESP=$(curl -s --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
       --data "name=$NAME&namespace_id=$NAMESPACE_ID" \
       "$GITLAB_API/projects")
-    PROJECT_ID=$(echo "$CREATE_RESP" | jq -r '.id // empty')
+    PROJECT_ID=$(echo "$CREATE_RESP" | jq -r '.id // empty' 2>/dev/null || true)
     if [ -z "$PROJECT_ID" ]; then
       echo "  [!] Failed to create project $NAME on GitLab"
       continue
