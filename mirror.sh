@@ -25,6 +25,7 @@ git config --global gc.auto 0
 git config --global http.version HTTP/1.1
 git config --global core.packedGitLimit 128m
 git config --global core.packedGitWindowSize 128m
+git config --global advice.ignoredHook false
 
 # Fetch GitHub repositories with pagination
 REPOS=""
