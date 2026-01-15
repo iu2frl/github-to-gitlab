@@ -1,21 +1,18 @@
-FROM debian:bookworm
+FROM alpine:3.19
 
 # Install tools
-RUN apt-get update && \
-    apt-get install -y git curl jq cron && \
-    apt-get clean
+RUN apk add --no-cache git curl jq bash dcron
 
 # Copy files
 COPY mirror.sh /root/mirror.sh
 COPY run-cron.sh /root/run-cron.sh
-COPY crontab.txt /etc/cron.d/mirror-cron
+COPY crontab.txt /root/crontab.txt
 
-RUN chmod +x /root/mirror.sh
-RUN chmod +x /root/run-cron.sh
+RUN chmod +x /root/mirror.sh && \
+    chmod +x /root/run-cron.sh
 
-# Add crontab file in the cron.d directory
-RUN chmod 0644 /etc/cron.d/mirror-cron
-RUN crontab /etc/cron.d/mirror-cron
+# Setup cron
+RUN crontab /root/crontab.txt
 
 # Prepare repos path
 RUN mkdir -p /root/repos

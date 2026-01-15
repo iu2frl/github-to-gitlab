@@ -3,6 +3,9 @@
 # Exit on error (but continue on individual repo errors)
 set -e
 
+# Load environment variables if file exists (for cron usage in Alpine)
+[ -f /root/container_env.sh ] && source /root/container_env.sh
+
 cd /root/repos
 
 # Config from environment
