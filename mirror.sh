@@ -16,11 +16,15 @@ GITLAB_NAMESPACE=${GITLAB_NAMESPACE:?Missing GITLAB_NAMESPACE}
 GITLAB_API="https://gitlab.com/api/v4"
 
 # Configure git to help with large repositories and low memory environments
-git config --global http.postBuffer 524288000
+# Lower buffer to prevent OOM (10MB)
+git config --global http.postBuffer 10485760
 git config --global pack.windowMemory 256m
 git config --global pack.threads 1
 git config --global core.compression 0
 git config --global gc.auto 0
+git config --global http.version HTTP/1.1
+git config --global core.packedGitLimit 128m
+git config --global core.packedGitWindowSize 128m
 
 # Fetch GitHub repositories with pagination
 REPOS=""
@@ -89,6 +93,15 @@ while read -r NAME URL; do
       attempts=$((attempts + 1))
       echo "  [+] Cloning repo $NAME from GitHub (attempt $attempts)..."
       if git clone --mirror "$URL"; then
+         if [ -d "$NAME.git" ]; then
+            cd "$NAME.git"
+            # Attempt LFS fetch (ignore errors if lfs not installed or not used)
+            if git lfs install --local >/dev/null 2>&1; then
+                echo "  [*] Fetching LFS objects..."
+                git lfs fetch --all 2>/dev/null || echo "  [!] LFS fetch failed or not needed"
+            fi
+            cd ..
+         fi
         return 0
       fi
 
@@ -107,6 +120,12 @@ while read -r NAME URL; do
     cd "$NAME.git" || return 1
     git remote add origin "$URL"
     if git fetch --prune origin "+refs/*:refs/*"; then
+      # LFS fetch for fallback
+      if git lfs install --local >/dev/null 2>&1; then
+          echo "  [*] Fetching LFS objects (fallback)..."
+          git lfs fetch --all 2>/dev/null || true
+      fi
+
       git remote remove origin
       cd ..
       return 0
@@ -134,6 +153,11 @@ while read -r NAME URL; do
 
     # Attempt forced mirror push with retries
     echo "  [+] Force pushing mirror to GitLab..."
+
+    # Push LFS objects first
+    echo "  [*] Pushing LFS objects..."
+    git lfs push --all gitlab || echo "  [!] LFS push warning (might not be an LFS repo or LFS not installed)"
+
     attempts=0
     max=3
     while [ $attempts -lt $max ]; do

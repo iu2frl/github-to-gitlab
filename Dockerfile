@@ -1,7 +1,7 @@
 FROM alpine:3.19
 
 # Install tools
-RUN apk add --no-cache git curl jq bash dcron
+RUN apk add --no-cache git curl jq bash dcron git-lfs
 
 # Copy files
 COPY mirror.sh /root/mirror.sh
