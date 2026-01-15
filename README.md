@@ -7,6 +7,7 @@ This project periodically mirrors all GitHub repositories you have access to, pu
 - Fetches list of all GitHub repositories (public and private)
 - Automatically creates missing GitLab repositories
 - Performs full `git push --mirror` to GitLab
+- Supports Git LFS (Large File Storage) mirroring
 - Runs on a schedule using cron (default: every hour)
 - Fully containerized via Docker
 
@@ -24,12 +25,13 @@ This project periodically mirrors all GitHub repositories you have access to, pu
 
 Set these environment variables in `docker-compose.yml`:
 
-| Variable           | Description                                   |
-|--------------------|-----------------------------------------------|
-| `GITHUB_TOKEN`     | Personal GitHub token                         |
-| `GITLAB_TOKEN`     | Personal GitLab token                         |
-| `GITLAB_NAMESPACE` | GitLab username or group where to mirror repos |
-| `FORCE_SYNC_ON_START` | Set to `true` to run sync immediately on container start (optional) |
+| Variable              | Description                                                                          |
+|-----------------------|--------------------------------------------------------------------------------------|
+| `GITHUB_TOKEN`        | Personal GitHub token                                                                |
+| `GITLAB_TOKEN`        | Personal GitLab token                                                                |
+| `GITLAB_NAMESPACE`    | GitLab username or group where to mirror repos                                       |
+| `FORCE_SYNC_ON_START` | Set to `true` to run sync immediately on container start (optional)                  |
+| `SKIP_REPOS`          | Comma-separated list of repository names (e.g. `repo1,repo2`), **not** user/repo path |
 
 ---
 
@@ -49,6 +51,7 @@ services:
       GITLAB_TOKEN: glpat_xxx       # Sostituisci con il tuo token GitLab
       GITLAB_NAMESPACE: tuo_username_o_gruppo
       FORCE_SYNC_ON_START: "true"   # Esegui subito la sincronizzazione all'avvio
+      SKIP_REPOS: "repo-to-skip,another-repo" # Solo i nomi dei repo, non user/repo
     tmpfs:
       - /root/repos
     #volumes:

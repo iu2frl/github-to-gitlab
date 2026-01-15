@@ -10,6 +10,7 @@ cd /root/repos
 
 # Config from environment
 FORCE_SYNC_ON_START=${FORCE_SYNC_ON_START:-false}
+SKIP_REPOS=${SKIP_REPOS:-""}
 GITHUB_TOKEN=${GITHUB_TOKEN:?Missing GITHUB_TOKEN}
 GITLAB_TOKEN=${GITLAB_TOKEN:?Missing GITLAB_TOKEN}
 GITLAB_NAMESPACE=${GITLAB_NAMESPACE:?Missing GITLAB_NAMESPACE}
@@ -61,6 +62,13 @@ fi
 # Process each repo
 while read -r NAME URL; do
   [ -z "$NAME" ] && continue
+
+  # Check if repo is in skip list
+  if [[ ",$SKIP_REPOS," == *",$NAME,"* ]]; then
+    echo "[!] Skipping $NAME (defined in SKIP_REPOS)"
+    continue
+  fi
+
   echo "[*] Processing $NAME"
 
   # Check if GitLab repo exists (retrieve project ID)
